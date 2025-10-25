@@ -26,3 +26,24 @@ pip install opencv-python pymupdf paddleocr pytesseract layoutparser torch torch
 - `docs/architecture_decision.md`: Phân tích và lựa chọn kiến trúc FastAPI + Node.js Gateway.
 - `docs/diagrams.md`: ERD và lưu đồ xử lý PDF (Mermaid).
 - `docs/ui_ux_outline.md`: Phác thảo UI/UX và kế hoạch thiết kế Figma.
+
+
+## Backend service
+
+Thư mục `src/backend` chứa FastAPI service, Celery worker và cấu hình lưu trữ.
+
+### Chạy API cục bộ
+
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
+
+### Chạy worker Celery
+
+```bash
+celery -A backend.celery_app.celery_app worker -Q pdf_convert.jobs --loglevel=info
+```
+
+Service cần PostgreSQL và Redis (cấu hình qua biến môi trường `PDFCONVERT_DATABASE_URL`, `PDFCONVERT_REDIS_URL`).
+
+Đặt biến môi trường `PYTHONPATH=src` khi chạy cục bộ để Python nhận diện module backend.
