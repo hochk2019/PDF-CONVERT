@@ -32,6 +32,14 @@ pip install opencv-python pymupdf paddleocr pytesseract layoutparser torch torch
 
 Thư mục `src/backend` chứa FastAPI service, Celery worker và cấu hình lưu trữ.
 
+### Cài đặt phụ thuộc backend
+
+Service hiện dùng JWT authentication, cần bổ sung các thư viện sau (ngoài FastAPI, SQLAlchemy, Celery):
+
+```bash
+pip install "passlib[bcrypt]" python-jose[cryptography]
+```
+
 ### Chạy API cục bộ
 
 ```bash
@@ -47,3 +55,17 @@ celery -A backend.celery_app.celery_app worker -Q pdf_convert.jobs --loglevel=in
 Service cần PostgreSQL và Redis (cấu hình qua biến môi trường `PDFCONVERT_DATABASE_URL`, `PDFCONVERT_REDIS_URL`).
 
 Đặt biến môi trường `PYTHONPATH=src` khi chạy cục bộ để Python nhận diện module backend.
+
+## Frontend (Next.js)
+
+Giao diện React/Next.js nằm trong thư mục `src/frontend` với các module chính: trang đăng nhập, bảng điều khiển Jobs, trang quản trị cấu hình OCR và audit logs.
+
+### Chạy UI cục bộ
+
+```bash
+cd src/frontend
+npm install
+npm run dev
+```
+
+Biến môi trường `NEXT_PUBLIC_API_BASE_URL` cho phép cấu hình endpoint backend (mặc định `http://localhost:8000`).
