@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     results_path: Path = Field(Path("var/results"), description="Directory storing processed outputs.")
     log_level: str = Field("INFO", description="Python logging level for the application.")
     audit_retention_days: int = Field(30, description="Number of days to retain audit trail entries.")
+    jwt_secret_key: str = Field("change-me", description="Secret key used to sign JWT access tokens.")
+    jwt_algorithm: str = Field("HS256", description="JWT signing algorithm.")
+    jwt_access_token_expires_minutes: int = Field(60, description="Access token validity window in minutes.")
 
     class Config:
         env_file = ".env"

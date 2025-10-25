@@ -41,6 +41,7 @@ class User(Base):
     full_name: Mapped[Optional[str]] = mapped_column(String(255))
     hashed_password: Mapped[Optional[str]] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     jobs: Mapped[list["Job"]] = relationship("Job", back_populates="user")
