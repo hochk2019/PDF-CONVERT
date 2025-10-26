@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseSettings, Field, validator
+from pydantic.v1 import BaseSettings, Field, validator
 
 
 class Settings(BaseSettings):

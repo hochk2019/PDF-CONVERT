@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional
+from typing import Any, Iterable, List, Optional
 
 from .llm_postprocessing import LLMPostProcessor, LLMPostProcessorConfig, LayoutMetadata
 from .ocr import OCRResult
@@ -111,6 +111,8 @@ class PostProcessingResult:
     llm_text: Optional[str]
     corrections: List[str]
     provider: Optional[str] = None
+    llm_raw: Optional[dict[str, Any]] = None
+    attempts: List[dict[str, Any]] = field(default_factory=list)
 
     @property
     def final_text(self) -> str:
@@ -162,6 +164,8 @@ class OCRPostProcessor:
         )
         llm_text: Optional[str] = None
         provider: Optional[str] = None
+        attempts: List[dict[str, Any]] = []
+        llm_raw: Optional[dict[str, Any]] = None
         if self._should_run_llm(ocr_result, layout_metadata):
             llm_response = self.llm_processor.enrich(
                 OCRResult(text=mapped_text, confidence=ocr_result.confidence, boxes=ocr_result.boxes),
@@ -169,13 +173,19 @@ class OCRPostProcessor:
                 model=llm_model,
                 page_hash=page_hash,
             )
+            attempts = getattr(self.llm_processor, "last_attempts", [])
             if llm_response:
                 llm_text = llm_response.text
                 provider = llm_response.provider
+                raw_payload = llm_response.raw
+                if isinstance(raw_payload, dict):
+                    llm_raw = raw_payload
         return PostProcessingResult(
             original_text=ocr_result.text,
             spell_checked_text=mapped_text,
             llm_text=llm_text,
             corrections=spell_result.corrections,
             provider=provider,
+            llm_raw=llm_raw,
+            attempts=attempts,
         )

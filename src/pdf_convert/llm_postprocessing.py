@@ -125,6 +125,7 @@ class LLMPostProcessor:
         else:
             self.providers = list(self.config.providers)
         self._cache: Dict[str, LLMResponse] = {}
+        self._last_attempts: List[Dict[str, Any]] = []
 
     def _prompt_from_context(
         self, ocr_result: "OCRResult", layout_metadata: LayoutMetadata | None
@@ -159,10 +160,18 @@ class LLMPostProcessor:
         cache_key = self._cache_key(page_hash or prompt, model)
         if self.config.cache_enabled and cache_key in self._cache:
             logger.debug("Returning cached LLM response for key %s", cache_key)
-            return self._cache[cache_key]
+            cached = self._cache[cache_key]
+            self._last_attempts = [
+                {
+                    "provider": cached.provider,
+                    "status": "cache_hit",
+                }
+            ]
+            return cached
 
         request = LLMRequest(prompt=prompt, model=model, metadata=layout_metadata or {})
         last_error: Exception | None = None
+        attempts: List[Dict[str, Any]] = []
         for provider in self.providers:
             try:
                 logger.debug("Invoking provider %s", getattr(provider, "name", provider))
@@ -172,15 +181,34 @@ class LLMPostProcessor:
                     continue
                 if self.config.cache_enabled:
                     self._cache[cache_key] = response
+                provider_name = response.provider or getattr(provider, "name", None)
+                response.provider = provider_name
+                attempts.append({"provider": provider_name, "status": "success"})
+                self._last_attempts = attempts
                 return response
             except Exception as exc:  # pragma: no cover - defensive logging
                 logger.exception("Provider %s failed: %s", getattr(provider, "name", provider), exc)
+                attempts.append(
+                    {
+                        "provider": getattr(provider, "name", "unknown"),
+                        "status": "failed",
+                        "error": str(exc),
+                    }
+                )
                 last_error = exc
                 continue
 
         if last_error:
+            self._last_attempts = attempts
             raise last_error
+        self._last_attempts = attempts
         return None
+
+    @property
+    def last_attempts(self) -> List[Dict[str, Any]]:
+        """Return metadata about the most recent provider attempts."""
+
+        return list(self._last_attempts)
 
 
 # Import placed at the end to avoid circular dependency at type-check time.
