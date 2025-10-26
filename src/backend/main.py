@@ -6,7 +6,21 @@ import uuid
 from datetime import timedelta
 from typing import Optional
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+import json
+from typing import Any
+
+import httpx
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -30,6 +44,7 @@ from .schemas import (
     JobCreateResponse,
     JobOut,
     JobStatusResponse,
+    LLMStatusOut,
     OCRConfigOut,
     TokenResponse,
     UserCreate,
@@ -91,17 +106,39 @@ def read_users_me(current_user: User = Depends(get_current_active_user)) -> User
     return UserOut.from_orm(current_user)
 
 
+# pylint: disable=too-many-arguments
 @app.post("/api/v1/jobs", response_model=JobCreateResponse)
 async def create_job(
     request: Request,
     file: UploadFile = File(..., description="PDF file to process"),
+    llm_options: str | None = Form(
+        None,
+        description=(
+            "Optional JSON encoded configuration forwarded to the LLM post-processing stage."
+        ),
+    ),
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> JobCreateResponse:
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
+    parsed_llm_options: dict[str, Any] | None = None
+    if llm_options:
+        try:
+            payload = json.loads(llm_options)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="Invalid llm_options payload") from exc
+        if payload is None:
+            parsed_llm_options = None
+        elif isinstance(payload, dict):
+            parsed_llm_options = payload
+        else:
+            raise HTTPException(status_code=400, detail="llm_options must be a JSON object")
+
     job = Job(user=current_user, input_filename=file.filename, input_path="")
+    if parsed_llm_options is not None:
+        job.llm_options = parsed_llm_options
     db.add(job)
     db.flush()
 
@@ -115,7 +152,11 @@ async def create_job(
         action="job.create",
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent"),
-        metadata={"job_id": str(job.id), "filename": file.filename},
+        metadata={
+            "job_id": str(job.id),
+            "filename": file.filename,
+            "llm_options": parsed_llm_options,
+        },
     )
 
     db.flush()
@@ -225,6 +266,42 @@ def get_admin_audit_logs(
         flattened.extend(AuditLogOut.from_orm(entry) for entry in user.audit_logs)
     flattened.sort(key=lambda log: log.created_at, reverse=True)
     return flattened[:200]
+
+
+@app.get("/api/v1/admin/llm-status", response_model=LLMStatusOut)
+def get_llm_status(_: User = Depends(get_current_active_admin)) -> LLMStatusOut:
+    fallback_enabled = settings.llm_fallback_enabled
+    primary_provider = settings.llm_provider
+
+    ollama_url: str | None = None
+    if primary_provider == "ollama" or fallback_enabled:
+        base_url = settings.llm_base_url
+        if base_url and "ollama" in (primary_provider or ""):
+            # When the configured base URL already targets Ollama we reuse it.
+            ollama_url = base_url.rsplit("/api", 1)[0]
+        if not ollama_url:
+            ollama_url = "http://127.0.0.1:11434"
+
+    ollama_online = False
+    ollama_error: str | None = None
+    if ollama_url:
+        try:
+            response = httpx.get(f"{ollama_url.rstrip('/')}/api/tags", timeout=2.0)
+            response.raise_for_status()
+            ollama_online = True
+        except httpx.HTTPError as exc:
+            ollama_error = str(exc)
+
+    using_external_api = bool(primary_provider and primary_provider != "ollama")
+
+    return LLMStatusOut(
+        primary_provider=primary_provider,
+        fallback_enabled=fallback_enabled,
+        ollama_url=ollama_url,
+        ollama_online=ollama_online,
+        ollama_error=ollama_error,
+        using_external_api=using_external_api,
+    )
 
 
 @app.websocket("/ws/jobs/{job_id}")

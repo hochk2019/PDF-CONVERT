@@ -7,6 +7,7 @@ import styles from './Layout.module.css';
 const navLinks = [
   { href: '/jobs', label: 'Jobs' },
   { href: '/admin', label: 'Admin' },
+  { href: '/admin/llm', label: 'LLM' },
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode; title?: string }> = ({ children, title }) => {

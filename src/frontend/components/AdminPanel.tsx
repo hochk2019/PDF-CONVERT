@@ -44,7 +44,7 @@ export const AdminPanel: React.FC = () => {
       <header className={styles.header}>
         <div>
           <h2>Điều khiển OCR</h2>
-          <p>Cấu hình đường dẫn lưu trữ và theo dõi audit logs.</p>
+          <p>Cấu hình đường dẫn lưu trữ, thông số LLM và theo dõi audit logs.</p>
         </div>
         {error && <p className={styles.error}>{error}</p>}
       </header>
@@ -65,6 +65,22 @@ export const AdminPanel: React.FC = () => {
           <div>
             <span className={styles.label}>Celery Queue</span>
             <code>{config.celery_task_queue}</code>
+          </div>
+          <div>
+            <span className={styles.label}>LLM Provider</span>
+            <code>{config.llm_provider ?? 'Không cấu hình'}</code>
+          </div>
+          <div>
+            <span className={styles.label}>LLM Model</span>
+            <code>{config.llm_model ?? 'Không đặt trước'}</code>
+          </div>
+          <div>
+            <span className={styles.label}>LLM Endpoint</span>
+            <code>{config.llm_base_url ?? 'Sử dụng mặc định'}</code>
+          </div>
+          <div>
+            <span className={styles.label}>Fallback</span>
+            <code>{config.llm_fallback_enabled ? 'Đang bật' : 'Đang tắt'}</code>
           </div>
         </div>
       )}
