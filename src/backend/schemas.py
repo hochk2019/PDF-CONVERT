@@ -46,6 +46,10 @@ class OCRConfigOut(BaseModel):
     results_path: str
     redis_url: str
     celery_task_queue: str
+    llm_provider: Optional[str] = None
+    llm_model: Optional[str] = None
+    llm_base_url: Optional[str] = None
+    llm_fallback_enabled: bool = False
 
 
 class JobLogOut(BaseModel):
@@ -65,6 +69,7 @@ class JobOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     result_payload: Optional[Dict[str, Any]] = None
+    llm_options: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None
     logs: List[JobLogOut] = Field(default_factory=list)
 

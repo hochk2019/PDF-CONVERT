@@ -28,6 +28,28 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field("change-me", description="Secret key used to sign JWT access tokens.")
     jwt_algorithm: str = Field("HS256", description="JWT signing algorithm.")
     jwt_access_token_expires_minutes: int = Field(60, description="Access token validity window in minutes.")
+    llm_provider: Optional[str] = Field(
+        None,
+        description=(
+            "Identifier of the primary LLM provider (e.g. ollama, openrouter, agentrouter)."
+        ),
+    )
+    llm_model: Optional[str] = Field(
+        None,
+        description="Default model name to request from the configured LLM provider.",
+    )
+    llm_base_url: Optional[str] = Field(
+        None,
+        description="Override base URL for the configured LLM provider API.",
+    )
+    llm_api_key: Optional[str] = Field(
+        None,
+        description="API key used for authenticated LLM providers (stored only in settings).",
+    )
+    llm_fallback_enabled: bool = Field(
+        False,
+        description="Whether LLM provider fallback is enabled in the post-processing pipeline.",
+    )
 
     class Config:
         env_file = ".env"

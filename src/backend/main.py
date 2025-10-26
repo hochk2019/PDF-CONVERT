@@ -208,6 +208,10 @@ def get_admin_config(_: User = Depends(get_current_active_admin)) -> OCRConfigOu
         results_path=str(settings.results_path),
         redis_url=settings.redis_url,
         celery_task_queue=settings.celery_task_queue,
+        llm_provider=settings.llm_provider,
+        llm_model=settings.llm_model,
+        llm_base_url=settings.llm_base_url,
+        llm_fallback_enabled=settings.llm_fallback_enabled,
     )
 
 

@@ -34,6 +34,29 @@ This guide describes how to provision a Windows 11 host for the PDF Convert stac
    npm install --prefix ui
    ```
 
+8. **Tạo file `.env` với cấu hình LLM**
+   - Sao chép ví dụ dưới đây vào `C:\PDF-CONVERT\.env` (được backend đọc tự động):
+     ```env
+     # Ollama cục bộ
+     PDFCONVERT_LLM_PROVIDER=ollama
+     PDFCONVERT_LLM_MODEL=llama3
+     PDFCONVERT_LLM_BASE_URL=http://localhost:11434/api/generate
+     PDFCONVERT_LLM_FALLBACK_ENABLED=false
+
+     # OpenRouter (bỏ comment khi sử dụng)
+     # PDFCONVERT_LLM_PROVIDER=openrouter
+     # PDFCONVERT_LLM_MODEL=meta-llama/llama-3-70b-instruct
+     # PDFCONVERT_LLM_BASE_URL=https://openrouter.ai/api/v1/chat/completions
+     # PDFCONVERT_LLM_API_KEY=sk-or-...
+
+     # AgentRouter
+     # PDFCONVERT_LLM_PROVIDER=agentrouter
+     # PDFCONVERT_LLM_MODEL=gpt-4o-mini
+     # PDFCONVERT_LLM_BASE_URL=https://api.agentrouter.ai/v1
+     # PDFCONVERT_LLM_API_KEY=ar-...
+     ```
+   - Khi triển khai qua Windows Service hoặc Docker Compose, đảm bảo file `.env` được tham chiếu trong cấu hình.
+
 ## 2. Configure Services for Automatic Startup
 
 ### Option A: Windows Service

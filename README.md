@@ -56,6 +56,38 @@ Service cần PostgreSQL và Redis (cấu hình qua biến môi trường `PDFCO
 
 Đặt biến môi trường `PYTHONPATH=src` khi chạy cục bộ để Python nhận diện module backend.
 
+### Cấu hình LLM hậu xử lý
+
+Các tùy chọn LLM được lấy từ biến môi trường (tự động đọc với tiền tố `PDFCONVERT_`). Các khóa được hỗ trợ:
+
+- `PDFCONVERT_LLM_PROVIDER`: định danh nhà cung cấp chính (`ollama`, `openrouter`, `agentrouter`...).
+- `PDFCONVERT_LLM_MODEL`: tên mô hình mặc định gửi lên nhà cung cấp.
+- `PDFCONVERT_LLM_BASE_URL`: URL API tùy chỉnh (ví dụ `http://localhost:11434/api/generate` cho Ollama).
+- `PDFCONVERT_LLM_API_KEY`: khóa truy cập cho các dịch vụ SaaS (không trả về trong API).
+- `PDFCONVERT_LLM_FALLBACK_ENABLED`: `true/false` để bật/tắt fallback qua nhiều nhà cung cấp.
+
+Ví dụ cấu hình `.env`:
+
+```env
+# Ollama cục bộ
+PDFCONVERT_LLM_PROVIDER=ollama
+PDFCONVERT_LLM_MODEL=llama3
+PDFCONVERT_LLM_BASE_URL=http://localhost:11434/api/generate
+PDFCONVERT_LLM_FALLBACK_ENABLED=false
+
+# OpenRouter
+# PDFCONVERT_LLM_PROVIDER=openrouter
+# PDFCONVERT_LLM_MODEL=meta-llama/llama-3-70b-instruct
+# PDFCONVERT_LLM_BASE_URL=https://openrouter.ai/api/v1/chat/completions
+# PDFCONVERT_LLM_API_KEY=sk-or-...
+
+# AgentRouter
+# PDFCONVERT_LLM_PROVIDER=agentrouter
+# PDFCONVERT_LLM_MODEL=gpt-4o-mini
+# PDFCONVERT_LLM_BASE_URL=https://api.agentrouter.ai/v1
+# PDFCONVERT_LLM_API_KEY=ar-...
+```
+
 ## Frontend (Next.js)
 
 Giao diện React/Next.js nằm trong thư mục `src/frontend` với các module chính: trang đăng nhập, bảng điều khiển Jobs, trang quản trị cấu hình OCR và audit logs.
