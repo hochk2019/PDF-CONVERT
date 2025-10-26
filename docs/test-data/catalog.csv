@@ -1,0 +1,4 @@
+file_path,file_name,source_category,source_details,usage_rights,document_type,file_size_bytes,notes
+real-environment/maintenance-report.pdf,maintenance-report.pdf,Real environment,"Thu thập từ báo cáo bảo trì hệ thống sản xuất (đã ẩn thông tin nhạy cảm).","Sử dụng nội bộ cho mục đích kiểm thử; không phân phối công khai.",Maintenance report,1052,"Giữ nguyên định dạng bảng và ảnh chụp thiết bị."
+customer/invoice-template.pdf,invoice-template.pdf,Customer,"Mẫu hóa đơn do khách hàng cung cấp, đã loại bỏ dữ liệu nhận dạng cá nhân.","Yêu cầu tuân thủ NDA; chỉ dùng nội bộ để hiệu chỉnh pipeline.",Invoice template,1042,"Phản ánh cấu trúc bảng tính toán và dấu mộc." 
+public/government-form.pdf,government-form.pdf,Public,"Biểu mẫu hành chính thuộc phạm vi public domain (cổng dịch vụ công).","Có thể chia sẻ tự do theo giấy phép public domain.",Government form,1047,"Bao gồm nhiều trường điền tay và ghi chú." 
