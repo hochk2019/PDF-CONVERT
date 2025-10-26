@@ -91,7 +91,7 @@ export const AdminPanel: React.FC = () => {
             <li key={`${log.created_at}-${index}`}>
               <span>{new Date(log.created_at).toLocaleString('vi-VN')}</span>
               <strong>{log.action}</strong>
-              {log.metadata && <code>{JSON.stringify(log.metadata)}</code>}
+              {log.details && <code>{JSON.stringify(log.details)}</code>}
             </li>
           ))}
           {logs.length === 0 && <li className={styles.empty}>Chưa có log nào.</li>}

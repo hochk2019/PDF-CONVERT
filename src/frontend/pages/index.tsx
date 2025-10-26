@@ -52,21 +52,40 @@ const LoginPage = () => {
               Tạo tài khoản
             </button>
           </div>
-          <label>
+          <label className={styles.field}>
             Email
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            <input
+              className={styles.input}
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
           </label>
           {mode === 'register' && (
-            <label>
+            <label className={styles.field}>
               Họ tên
-              <input type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} />
+              <input
+                className={styles.input}
+                type="text"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+              />
             </label>
           )}
-          <label>
+          <label className={styles.field}>
             Mật khẩu
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+            <input
+              className={styles.input}
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
           </label>
-          <button type="submit">{mode === 'login' ? 'Tiếp tục' : 'Đăng ký & đăng nhập'}</button>
+          <button className={styles.submit} type="submit">
+            {mode === 'login' ? 'Tiếp tục' : 'Đăng ký & đăng nhập'}
+          </button>
           {error && <p className={styles.error}>{error}</p>}
           {isAuthenticated && <p className={styles.success}>Đăng nhập thành công! Điều hướng tới Jobs...</p>}
         </form>

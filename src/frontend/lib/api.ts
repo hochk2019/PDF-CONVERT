@@ -36,7 +36,7 @@ export type AuditLogEntry = {
   action: string;
   ip_address: string | null;
   user_agent: string | null;
-  metadata: Record<string, unknown> | null;
+  details: Record<string, unknown> | null;
   created_at: string;
 };
 

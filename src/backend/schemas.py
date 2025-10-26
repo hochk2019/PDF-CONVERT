@@ -5,21 +5,24 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .models import JobStatus, LogLevel
 
 
-class UserOut(BaseModel):
+class ORMModel(BaseModel):
+    """Base class enabling attribute-based ORM parsing."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserOut(ORMModel):
     id: uuid.UUID
     email: str
     full_name: Optional[str]
     is_active: bool
     is_admin: bool
     created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class UserCreate(BaseModel):
@@ -61,17 +64,13 @@ class LLMStatusOut(BaseModel):
     using_external_api: bool
 
 
-class JobLogOut(BaseModel):
+class JobLogOut(ORMModel):
     created_at: datetime
     level: LogLevel
     message: str
     extra: Optional[Dict[str, Any]] = None
 
-    class Config:
-        orm_mode = True
-
-
-class JobOut(BaseModel):
+class JobOut(ORMModel):
     id: uuid.UUID
     status: JobStatus
     input_filename: str
@@ -82,31 +81,20 @@ class JobOut(BaseModel):
     error_message: Optional[str] = None
     logs: List[JobLogOut] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
-
-
-class JobStatusResponse(BaseModel):
+class JobStatusResponse(ORMModel):
     id: uuid.UUID
     status: JobStatus
     error_message: Optional[str] = None
-
-    class Config:
-        orm_mode = True
-
 
 class JobCreateResponse(BaseModel):
     id: uuid.UUID
     status: JobStatus
     message: str
 
-
-class AuditLogOut(BaseModel):
+class AuditLogOut(ORMModel):
     action: str
     ip_address: Optional[str]
     user_agent: Optional[str]
-    metadata: Optional[Dict[str, Any]]
+    details: Optional[Dict[str, Any]]
     created_at: datetime
 
-    class Config:
-        orm_mode = True

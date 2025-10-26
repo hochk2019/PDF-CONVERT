@@ -18,7 +18,7 @@ def record_audit(
     action: str,
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None,
+    details: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Persist an audit trail entry and emit a structured log."""
 
@@ -27,10 +27,10 @@ def record_audit(
         action=action,
         ip_address=ip_address,
         user_agent=user_agent,
-        metadata=metadata or {},
+        details=details or {},
     )
     session.add(audit)
-    LOGGER.info("audit log created", extra={"user_id": str(user_id), "action": action, "metadata": metadata or {}})
+    LOGGER.info("audit log created", extra={"user_id": str(user_id), "action": action, "metadata": details or {}})
 
 
 def append_job_log(

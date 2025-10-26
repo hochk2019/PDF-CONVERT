@@ -96,7 +96,7 @@ def login_for_access_token(
         action="auth.login",
         ip_address=None,
         user_agent=None,
-        metadata={"email": user.email},
+        details={"email": user.email},
     )
     return TokenResponse(access_token=access_token)
 
@@ -152,7 +152,7 @@ async def create_job(
         action="job.create",
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent"),
-        metadata={
+        details={
             "job_id": str(job.id),
             "filename": file.filename,
             "llm_options": parsed_llm_options,
