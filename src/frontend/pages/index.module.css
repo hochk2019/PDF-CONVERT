@@ -50,13 +50,13 @@
   color: #e2e8f0;
 }
 
-label {
+.field {
   display: grid;
   gap: 8px;
   font-weight: 500;
 }
 
-input {
+.input {
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
@@ -64,7 +64,7 @@ input {
   color: #e2e8f0;
 }
 
-button[type='submit'] {
+.submit {
   background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
   border: none;
   color: white;
