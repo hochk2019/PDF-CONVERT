@@ -37,7 +37,7 @@ Thư mục `src/backend` chứa FastAPI service, Celery worker và cấu hình l
 Service hiện dùng JWT authentication, cần bổ sung các thư viện sau (ngoài FastAPI, SQLAlchemy, Celery):
 
 ```bash
-pip install "passlib[bcrypt]" python-jose[cryptography]
+pip install "passlib[bcrypt]" python-jose[cryptography] "httpx>=0.25"
 ```
 
 ### Chạy API cục bộ
