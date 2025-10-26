@@ -79,32 +79,23 @@ This guide describes how to provision a Windows 11 host for the PDF Convert stac
 3. Grant the service account "Log on as a service" rights, and set recovery actions (`sc failure PDFConvertAPI reset= 120 actions= restart/60000`).
 
 ### Option B: Docker Compose Stack
-1. Create `docker-compose.yml` (stored under `C:\PDF-CONVERT\deploy\docker-compose.yml`):
-   ```yaml
-   version: "3.9"
-   services:
-     api:
-       build: ..
-       command: ["uvicorn", "pdf_convert.api:app", "--host", "0.0.0.0", "--port", "8000"]
-       env_file:
-         - ../.env.production
-       volumes:
-         - ../data:/app/data
-       restart: unless-stopped
-     worker:
-       build: ..
-       command: ["celery", "-A", "pdf_convert.celery_app", "worker", "--loglevel=INFO"]
-       env_file:
-         - ../.env.production
-       volumes:
-         - ../data:/app/data
-       depends_on:
-         - api
-       restart: unless-stopped
+1. Repository-provided templates
+   - `scripts\windows\docker-compose.windows.yml` spins up PostgreSQL, Redis và Ollama (`ollama serve`) với volume lưu trữ sẵn.
+   - `scripts\windows\launch-stack.ps1` điều phối Docker Compose và khởi chạy FastAPI (uvicorn) cùng Celery worker từ môi trường Python cục bộ.
+2. Thực thi nhanh
+   ```powershell
+   cd C:\PDF-CONVERT
+   # Kích hoạt virtual env trước nếu chưa chạy (.\.venv\Scripts\Activate.ps1)
+   .\scripts\windows\launch-stack.ps1
    ```
-2. Enable Docker Desktop to start on login and configure the stack to launch automatically:
-   - Create `C:\PDF-CONVERT\deploy\start-stack.ps1` that runs `docker compose up -d`.
-   - Add a Scheduled Task (Trigger: At startup) running the script with highest privileges.
+   - Tham số `-SkipContainers` cho phép bỏ qua bước `docker compose up` khi cơ sở hạ tầng đã chạy sẵn.
+   - Script sẽ giữ hai cửa sổ PowerShell riêng cho API và Celery để dễ theo dõi log.
+3. Tự động hóa
+   - Tạo tác vụ theo lịch gọi `powershell.exe -ExecutionPolicy Bypass -File C:\PDF-CONVERT\scripts\windows\launch-stack.ps1`.
+   - Đảm bảo Docker Desktop khởi động cùng hệ thống để Redis/PostgreSQL/Ollama sẵn sàng trước khi script chạy.
+4. Yêu cầu mạng
+   - Mở quyền inbound trên Windows Firewall cho các cổng nội bộ: `8000` (API), `5432` (PostgreSQL), `6379` (Redis), `11434` (Ollama) đối với mạng tin cậy.
+   - Nếu bật nhà cung cấp LLM bên ngoài (OpenRouter, AgentRouter,...), xác nhận outbound HTTPS (TCP 443) tới miền tương ứng được cho phép theo chính sách doanh nghiệp.
 
 ## 3. Reverse Proxy and HTTPS
 

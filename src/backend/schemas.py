@@ -52,6 +52,15 @@ class OCRConfigOut(BaseModel):
     llm_fallback_enabled: bool = False
 
 
+class LLMStatusOut(BaseModel):
+    primary_provider: Optional[str]
+    fallback_enabled: bool
+    ollama_url: Optional[str]
+    ollama_online: bool
+    ollama_error: Optional[str]
+    using_external_api: bool
+
+
 class JobLogOut(BaseModel):
     created_at: datetime
     level: LogLevel
