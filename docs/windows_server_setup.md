@@ -30,7 +30,7 @@ This guide describes how to provision a Windows 11 host for the PDF Convert stac
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install --upgrade pip
-   pip install -r requirements.txt
+   pip install -r requirements.txt  # chứa FastAPI, Celery, httpx>=0.25 và các phụ thuộc backend khác
    npm install --prefix ui
    ```
 
