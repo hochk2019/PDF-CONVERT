@@ -127,4 +127,6 @@ def test_postprocessor_merges_outputs():
     assert result.llm_text == "van bản chuẩn"
     assert result.final_text == "van bản chuẩn"
     assert result.provider == "dummy"
+    assert result.llm_raw == {}
+    assert result.attempts and result.attempts[0]["status"] == "success"
 
