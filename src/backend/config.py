@@ -50,6 +50,17 @@ class Settings(BaseSettings):
         False,
         description="Whether LLM provider fallback is enabled in the post-processing pipeline.",
     )
+    ocr_backend: str = Field(
+        "paddle",
+        description=(
+            "Primary OCR backend to use. Supported values: 'paddle' (requires paddleocr) or"
+            " 'tesseract' (requires pytesseract + system tesseract-ocr)."
+        ),
+    )
+    ocr_language: str = Field(
+        "vie",
+        description="Language hint passed to the OCR engine (Tesseract/Paddle language code).",
+    )
 
     class Config:
         env_file = ".env"

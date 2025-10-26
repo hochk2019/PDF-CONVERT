@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 node_modules/
 src/frontend/node_modules/
+.venv/
+docs/samples/*.png
+docs/samples/*.pdf
+docs/samples/results/*.docx
+docs/samples/results/*.xlsx
