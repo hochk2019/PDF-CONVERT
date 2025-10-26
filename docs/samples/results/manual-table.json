@@ -1,0 +1,34 @@
+{
+  "raw_pages": [
+    "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U\n"
+  ],
+  "pages": [
+    "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U\n"
+  ],
+  "raw_combined_text": "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U",
+  "combined_text": "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U",
+  "average_confidence": 14.848214285714286,
+  "page_details": [
+    {
+      "page": 1,
+      "raw_text": "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U\n",
+      "spell_checked_text": "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U\n",
+      "llm_text": null,
+      "final_text": "=\n\n@œ‹\n\n: 5\n\n)\n\nølŠ|E|®N\n\n$l8|9|_\nQœJ\n\n=\n\n@œ‹\n\n: 5\n\n)\n\nelS|E|®N\n\nSJ3| BỊ `\n\n=\n\n@œ‹\n\n: 5\n\n)\n\n2[N|E|S\n\nsI|ø|”\nœ) | Ơn\n\n=\n\n@\n\n: 5\n\nS)\n\ne9 |BE|š\n\nNIN|8|”\n{|\n\n=\n\n@\n\n: 5\n\nS)\n\ne|2|BE|Ÿ\n\n„Jø|N|^\nG |. U\n",
+      "confidence": 14.848214285714286,
+      "provider": null,
+      "corrections": [],
+      "attempts": []
+    }
+  ],
+  "llm": {
+    "enabled": false,
+    "providers": [],
+    "provider_usage": {},
+    "model": null,
+    "fallback_configured": false,
+    "fallback_used": false,
+    "fallback_attempts": [],
+    "artifacts": {}
+  }
+}

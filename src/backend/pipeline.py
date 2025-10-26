@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -39,6 +40,7 @@ class OCRPipeline:
 
     def __init__(self) -> None:
         self.storage = StorageManager()
+        self._logger = logging.getLogger(__name__)
 
     def _build_converter(self):
         try:
@@ -49,10 +51,34 @@ class OCRPipeline:
 
     def _build_ocr(self):
         try:
-            from pdf_convert.ocr import OCRConfig, OCRProcessor
+            from pdf_convert.ocr import OCRBackend, OCRConfig, OCRProcessor
         except ImportError as exc:  # pragma: no cover - optional dependency guard
             raise PipelineDependencyError("OCR dependencies are not installed") from exc
-        return OCRProcessor(OCRConfig())
+        settings = get_settings()
+        backend_name = (settings.ocr_backend or "paddle").strip().lower()
+        config = OCRConfig(language=settings.ocr_language)
+        if backend_name == OCRBackend.TESSERACT.value:
+            config.backend = OCRBackend.TESSERACT
+        else:
+            config.backend = OCRBackend.PADDLE
+
+        try:
+            return OCRProcessor(config)
+        except ImportError as exc:
+            if config.backend != OCRBackend.PADDLE:
+                raise PipelineDependencyError("OCR backend dependencies are not installed") from exc
+            fallback_config = OCRConfig(
+                backend=OCRBackend.TESSERACT,
+                language=settings.ocr_language,
+                tesseract_psm=6,
+                tesseract_oem=3,
+            )
+            try:
+                return OCRProcessor(fallback_config)
+            except ImportError as fallback_exc:
+                raise PipelineDependencyError(
+                    "Neither PaddleOCR nor Tesseract backends are available"
+                ) from fallback_exc
 
     def _build_llm_providers(
         self,
@@ -196,6 +222,35 @@ class OCRPipeline:
                         artifacts.append((key, data))
         return artifacts
 
+    def _generate_office_artifacts(self, job_id: str, pages: List[str]) -> Dict[str, Path]:
+        artifacts: Dict[str, Path] = {}
+        try:
+            from .artifact_export import build_docx, build_xlsx
+        except ImportError:
+            return artifacts
+
+        try:
+            docx_bytes = build_docx(pages)
+        except ImportError:
+            docx_bytes = None
+        except Exception:  # pragma: no cover - diagnostic logging
+            self._logger.exception("Failed to build DOCX artifact for job %s", job_id)
+            docx_bytes = None
+        if docx_bytes:
+            artifacts["docx"] = self.storage.write_binary_artifact(job_id, ".docx", docx_bytes)
+
+        try:
+            xlsx_bytes = build_xlsx(pages)
+        except ImportError:
+            xlsx_bytes = None
+        except Exception:  # pragma: no cover - diagnostic logging
+            self._logger.exception("Failed to build XLSX artifact for job %s", job_id)
+            xlsx_bytes = None
+        if xlsx_bytes:
+            artifacts["xlsx"] = self.storage.write_binary_artifact(job_id, ".xlsx", xlsx_bytes)
+
+        return artifacts
+
     def run(
         self, job_id: str, input_path: Path, *, llm_options: Optional[Dict[str, Any]] = None
     ) -> PipelineResult:
@@ -310,6 +365,10 @@ class OCRPipeline:
             "page_details": page_details,
             "llm": llm_metadata,
         }
+
+        office_artifacts = self._generate_office_artifacts(job_id, corrected_pages)
+        for kind, path in office_artifacts.items():
+            artifacts.setdefault(kind, path)
 
         output_path = self.storage.write_result(
             job_id, json.dumps(payload, ensure_ascii=False, indent=2)
