@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildJobWebSocket,
   downloadArtifact,
@@ -14,24 +14,18 @@ type Props = {
   refreshSignal: number;
 };
 
-type JobWithRealtime = JobSummary & {
-  websocket?: WebSocket;
-};
-
 export const JobList: React.FC<Props> = ({ refreshSignal }) => {
   const { token } = useAuth();
-  const [jobs, setJobs] = useState<JobWithRealtime[]>([]);
+  const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const socketsRef = useRef<Map<string, WebSocket>>(new Map());
 
   const refreshJobs = useMemo(
     () => async () => {
       if (!token) return;
       try {
         const data = await fetchJobs(token);
-        setJobs((prev) => {
-          const byId = new Map(prev.map((job) => [job.id, job]));
-          return data.map((job) => ({ ...job, websocket: byId.get(job.id)?.websocket }));
-        });
+        setJobs(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Không thể tải danh sách jobs.');
       }
@@ -44,27 +38,58 @@ export const JobList: React.FC<Props> = ({ refreshSignal }) => {
   }, [refreshSignal, refreshJobs]);
 
   useEffect(() => {
-    if (!token) return;
-    const sockets = jobs.map((job) => {
-      if (job.status.toLowerCase() === 'completed' || job.status.toLowerCase() === 'failed') {
-        return job.websocket;
-      }
-      const socket = buildJobWebSocket(job.id, token);
-      socket.onmessage = (event) => {
-        const payload = JSON.parse(event.data);
-        if (payload.status) {
-          setJobs((prev) =>
-            prev.map((item) => (item.id === job.id ? { ...item, status: payload.status, error_message: payload.error_message } : item)),
-          );
+    if (!token) {
+      socketsRef.current.forEach((socket) => socket.close());
+      socketsRef.current.clear();
+      return;
+    }
+
+    jobs.forEach((job) => {
+      const jobId = job.id;
+      const status = job.status.toLowerCase();
+      const existing = socketsRef.current.get(jobId);
+      const isTerminal = status === 'completed' || status === 'failed';
+
+      if (isTerminal) {
+        if (existing) {
+          existing.close();
+          socketsRef.current.delete(jobId);
         }
-      };
-      return socket;
+        return;
+      }
+
+      if (!existing) {
+        const socket = buildJobWebSocket(jobId, token);
+        socket.onmessage = (event) => {
+          const payload = JSON.parse(event.data);
+          if (payload.status) {
+            setJobs((prev) =>
+              prev.map((item) =>
+                item.id === jobId
+                  ? { ...item, status: payload.status, error_message: payload.error_message }
+                  : item,
+              ),
+            );
+            const normalized = String(payload.status).toLowerCase();
+            if (normalized === 'completed' || normalized === 'failed') {
+              const active = socketsRef.current.get(jobId);
+              active?.close();
+              socketsRef.current.delete(jobId);
+            }
+          }
+        };
+        socket.onclose = () => {
+          socketsRef.current.delete(jobId);
+        };
+        socketsRef.current.set(jobId, socket);
+      }
     });
-    setJobs((prev) => prev.map((job, index) => ({ ...job, websocket: sockets[index] })));
-    return () => {
-      sockets.forEach((socket) => socket?.close());
-    };
-  }, [jobs.length, token]);
+  }, [jobs, token]);
+
+  useEffect(() => () => {
+    socketsRef.current.forEach((socket) => socket.close());
+    socketsRef.current.clear();
+  }, []);
 
   const handleDownload = async (job: JobSummary) => {
     if (!token) return;
