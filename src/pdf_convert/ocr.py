@@ -9,6 +9,12 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 
+LANGUAGE_ALIASES: Dict[str, str] = {
+    "vie": "vi",
+    "eng": "en",
+}
+
+
 class OCRBackend(str, Enum):
     """Supported OCR engines."""
 
@@ -55,8 +61,11 @@ class OCRProcessor:
                 "PaddleOCR is not installed. Install paddleocr>=2.6.0 to use the Paddle backend."
             ) from exc
 
+        normalized_language = self.config.language.strip()
+        language_key = normalized_language.lower()
+        resolved_language = LANGUAGE_ALIASES.get(language_key, normalized_language)
         kwargs = {
-            "lang": self.config.language,
+            "lang": resolved_language,
             "use_angle_cls": self.config.enable_angle_class,
         }
         if self.config.paddle_kwargs:
