@@ -65,7 +65,9 @@ class PDFToImageConverter:
         Returns
         -------
         list of numpy.ndarray
-            Each array is a preprocessed OpenCV BGR/grayscale image ready for OCR.
+            Each array is a preprocessed OpenCV image ready for OCR. Outputs may be
+            grayscale or binary; the Paddle backend expands them to BGR before
+            inference when necessary.
         """
 
         path = Path(pdf_path)
