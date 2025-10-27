@@ -118,7 +118,13 @@ class OCRProcessor:
 
     def _run_paddle(self, image: np.ndarray) -> OCRResult:
         engine = self._load_paddle()
-        result = self._invoke_paddle(engine, image)
+        processed = image
+        if image.ndim == 2 or (image.ndim == 3 and image.shape[2] == 1):
+            import cv2
+
+            processed = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+        result = self._invoke_paddle(engine, processed)
 
         text_parts: List[str] = []
         confidences: List[float] = []

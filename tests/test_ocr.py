@@ -13,8 +13,26 @@ if str(SRC_ROOT) not in sys.path:
 
 
 def _install_cv2_stub(monkeypatch) -> None:
-    if "cv2" not in sys.modules:
-        monkeypatch.setitem(sys.modules, "cv2", types.ModuleType("cv2"))
+    module = sys.modules.get("cv2")
+    if module is None:
+        module = types.ModuleType("cv2")
+        module.COLOR_BGR2GRAY = 0
+        module.COLOR_GRAY2BGR = 1
+
+        def cvtColor(image, code):
+            if code == module.COLOR_BGR2GRAY:
+                if image.ndim == 2:
+                    return image
+                return image[..., 0]
+            if code == module.COLOR_GRAY2BGR:
+                if image.ndim == 2:
+                    return np.stack([image] * 3, axis=-1)
+                return np.repeat(image, 3, axis=-1)
+            raise ValueError(f"Unsupported conversion code: {code}")
+
+        module.cvtColor = cvtColor
+        monkeypatch.setitem(sys.modules, "cv2", module)
+
     if "fitz" not in sys.modules:
         monkeypatch.setitem(sys.modules, "fitz", types.ModuleType("fitz"))
 
@@ -143,6 +161,29 @@ def test_paddle_cls_argument_skipped_when_unsupported(monkeypatch):
 
     result = processor._run_paddle(image)
 
+    assert call_details["kwargs"] == {}
+    assert result.text == "hello"
+    assert result.confidence == 0.9
+    assert result.boxes == [[0, 0, 1, 0, 1, 1, 0, 1]]
+
+
+def test_paddle_binary_inputs_are_converted_to_bgr(monkeypatch):
+    captured_kwargs: dict[str, object] = {}
+    call_details: dict[str, object] = {}
+    _install_paddle_processing_stub(
+        monkeypatch, captured_kwargs, call_details, include_cls=False
+    )
+    _install_cv2_stub(monkeypatch)
+
+    from src.pdf_convert.ocr import OCRConfig, OCRProcessor
+
+    processor = OCRProcessor(OCRConfig())
+    binary_image = (np.arange(16, dtype=np.uint8).reshape(4, 4) > 7).astype(np.uint8) * 255
+
+    result = processor._run_paddle(binary_image)
+
+    dispatched_image = call_details["args"][0]
+    assert dispatched_image.shape == (4, 4, 3)
     assert call_details["kwargs"] == {}
     assert result.text == "hello"
     assert result.confidence == 0.9
