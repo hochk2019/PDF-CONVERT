@@ -92,6 +92,28 @@ def _install_paddle_processing_stub(
     monkeypatch.setitem(sys.modules, "paddleocr", module)
 
 
+def _install_paddle_mapping_stub(monkeypatch, captured_kwargs: dict[str, object]) -> None:
+    module = types.ModuleType("paddleocr")
+
+    class DummyPaddleOCR:
+        def __init__(self, **kwargs):
+            captured_kwargs.update(kwargs)
+
+        def ocr(self, image):  # type: ignore[override]
+            box1 = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+            box2 = np.array([[2, 2], [3, 2], [3, 3], [2, 3]])
+            return [
+                {
+                    "rec_texts": ["foo", "bar"],
+                    "rec_scores": [0.8, 0.9],
+                    "rec_polys": [box1, box2],
+                }
+            ]
+
+    module.PaddleOCR = DummyPaddleOCR  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "paddleocr", module)
+
+
 def test_paddle_language_alias_applied(monkeypatch):
     captured_kwargs: dict[str, object] = {}
     _install_paddle_stub(monkeypatch, captured_kwargs)
@@ -188,3 +210,20 @@ def test_paddle_binary_inputs_are_converted_to_bgr(monkeypatch):
     assert result.text == "hello"
     assert result.confidence == 0.9
     assert result.boxes == [[0, 0, 1, 0, 1, 1, 0, 1]]
+
+
+def test_paddle_mapping_output_is_supported(monkeypatch):
+    captured_kwargs: dict[str, object] = {}
+    _install_paddle_mapping_stub(monkeypatch, captured_kwargs)
+    _install_cv2_stub(monkeypatch)
+
+    from src.pdf_convert.ocr import OCRConfig, OCRProcessor
+
+    processor = OCRProcessor(OCRConfig())
+    image = np.zeros((2, 2, 3), dtype=np.uint8)
+
+    result = processor._run_paddle(image)
+
+    assert result.text == "foo\nbar"
+    assert result.confidence == np.mean([0.8, 0.9])
+    assert result.boxes == [[0, 0, 1, 0, 1, 1, 0, 1], [2, 2, 3, 2, 3, 3, 2, 3]]
