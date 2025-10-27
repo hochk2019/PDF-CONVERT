@@ -175,6 +175,7 @@ def test_process_pdf_logs_llm_usage(monkeypatch):
     assert job.status == JobStatus.COMPLETED
     assert job.result_path == "/tmp/result.json"
     assert job.result_payload == metadata
+    assert job.result_payload["artifacts"] == {"docx": "/tmp/result.docx"}
 
     messages = [entry["message"] for entry in session.log_entries]
     assert "Job picked up by worker." in messages

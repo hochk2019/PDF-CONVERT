@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildJobWebSocket, downloadResult, fetchJobs, JobSummary } from '@/lib/api';
+import {
+  buildJobWebSocket,
+  downloadArtifact,
+  downloadResult,
+  fetchJobs,
+  JobSummary,
+} from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusPill } from './StatusPill';
 import styles from './JobList.module.css';
@@ -75,6 +81,32 @@ export const JobList: React.FC<Props> = ({ refreshSignal }) => {
     }
   };
 
+  const handleArtifactDownload = async (job: JobSummary, kind: string) => {
+    if (!token) return;
+    try {
+      const blob = await downloadArtifact(token, job.id, kind);
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${job.id}.${kind}`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tải tệp đính kèm.');
+    }
+  };
+
+  const extractArtifacts = (payload: JobSummary['result_payload']) => {
+    if (!payload || typeof payload !== 'object') return {} as Record<string, string>;
+    const raw = (payload as { artifacts?: unknown }).artifacts;
+    if (!raw || typeof raw !== 'object') return {} as Record<string, string>;
+    return Object.fromEntries(
+      Object.entries(raw as Record<string, unknown>).filter(
+        ([key, value]) => typeof key === 'string' && typeof value === 'string',
+      ),
+    ) as Record<string, string>;
+  };
+
   if (!token) {
     return <p>Đăng nhập để xem danh sách jobs.</p>;
   }
@@ -119,14 +151,27 @@ export const JobList: React.FC<Props> = ({ refreshSignal }) => {
                 <td>{new Date(job.created_at).toLocaleString('vi-VN')}</td>
                 <td>{new Date(job.updated_at).toLocaleString('vi-VN')}</td>
                 <td>
-                  <button
-                    type="button"
-                    className={styles.download}
-                    onClick={() => handleDownload(job)}
-                    disabled={job.status.toLowerCase() !== 'completed'}
-                  >
-                    Tải kết quả
-                  </button>
+                  <div className={styles.actions}>
+                    <button
+                      type="button"
+                      className={styles.download}
+                      onClick={() => handleDownload(job)}
+                      disabled={job.status.toLowerCase() !== 'completed'}
+                    >
+                      Tải JSON
+                    </button>
+                    {Object.keys(extractArtifacts(job.result_payload)).map((kind) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        className={styles.download}
+                        onClick={() => handleArtifactDownload(job, kind)}
+                        disabled={job.status.toLowerCase() !== 'completed'}
+                      >
+                        {kind.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
                 </td>
               </tr>
             ))}

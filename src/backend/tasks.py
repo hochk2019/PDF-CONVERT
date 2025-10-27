@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from pathlib import Path
+from typing import Any, Dict
 
 from sqlalchemy.orm import Session
 
@@ -39,7 +40,18 @@ def process_pdf(job_id: str) -> None:
             )
             job.status = JobStatus.COMPLETED
             job.result_path = str(result.output_path)
-            job.result_payload = result.metadata
+
+            metadata: Dict[str, Any] = {}
+            if isinstance(result.metadata, dict):
+                metadata = result.metadata
+            if result.artifacts:
+                artifact_payload = {kind: str(path) for kind, path in result.artifacts.items()}
+                existing = metadata.get("artifacts") if isinstance(metadata, dict) else None
+                if isinstance(existing, dict):
+                    existing.update(artifact_payload)
+                else:
+                    metadata["artifacts"] = artifact_payload
+            job.result_payload = metadata
             append_job_log(session, job, "OCR pipeline completed successfully.")
             llm_metadata = {}
             if isinstance(result.metadata, dict):

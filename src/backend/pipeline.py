@@ -370,6 +370,11 @@ class OCRPipeline:
         for kind, path in office_artifacts.items():
             artifacts.setdefault(kind, path)
 
+        artifact_metadata = {kind: str(path) for kind, path in artifacts.items()}
+        llm_metadata["artifacts"] = artifact_metadata
+        payload["llm"] = llm_metadata
+        payload["artifacts"] = artifact_metadata
+
         output_path = self.storage.write_result(
             job_id, json.dumps(payload, ensure_ascii=False, indent=2)
         )

@@ -21,6 +21,8 @@ export type RegisterPayload = {
   is_admin?: boolean;
 };
 
+export type JobArtifacts = Record<string, string>;
+
 export type JobSummary = {
   id: string;
   status: string;
@@ -28,7 +30,7 @@ export type JobSummary = {
   created_at: string;
   updated_at: string;
   llm_options?: Record<string, unknown> | null;
-  result_payload?: Record<string, unknown> | null;
+  result_payload?: (Record<string, unknown> & { artifacts?: JobArtifacts }) | null;
   error_message?: string | null;
 };
 
@@ -134,6 +136,21 @@ export const downloadResult = async (token: string, jobId: string): Promise<Blob
   if (!response.ok) {
     const message = await response.text();
     throw new Error(message || 'Unable to download result');
+  }
+  return response.blob();
+};
+
+export const downloadArtifact = async (
+  token: string,
+  jobId: string,
+  kind: string,
+): Promise<Blob> => {
+  const response = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/artifacts/${kind}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || 'Unable to download artifact');
   }
   return response.blob();
 };
