@@ -79,6 +79,12 @@
   cursor: not-allowed;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .error {
   color: #f87171;
   margin: 0;

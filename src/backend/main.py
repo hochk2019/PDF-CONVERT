@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
 from datetime import timedelta
-from typing import Optional
-
-import json
-from typing import Any
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 import httpx
 from fastapi import (
@@ -52,6 +51,11 @@ from .schemas import (
 )
 from .storage import StorageManager
 from .tasks import process_pdf
+
+ARTIFACT_MEDIA_TYPES = {
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
 
 configure_logging()
 settings: Settings = get_settings()
@@ -225,6 +229,47 @@ def download_result(
     if not path.exists():
         raise HTTPException(status_code=404, detail="Result not found")
     return FileResponse(path, media_type="application/json", filename=path.name)
+
+
+@app.get("/api/v1/jobs/{job_id}/artifacts/{kind}")
+def download_artifact(
+    job_id: uuid.UUID,
+    kind: str,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> FileResponse:
+    job = db.query(Job).filter(Job.id == job_id).one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to download this artifact")
+    if job.status != JobStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Job not completed")
+
+    artifacts: Dict[str, str] = {}
+    if isinstance(job.result_payload, dict):
+        payload_artifacts = job.result_payload.get("artifacts")
+        if isinstance(payload_artifacts, dict):
+            artifacts = {
+                key: value
+                for key, value in payload_artifacts.items()
+                if isinstance(key, str) and isinstance(value, str)
+            }
+
+    normalized_kind = kind.lower()
+    if normalized_kind not in artifacts:
+        raise HTTPException(status_code=404, detail="Artifact not available")
+
+    stored_path = Path(artifacts[normalized_kind])
+    suffix = stored_path.suffix or f".{normalized_kind}"
+    storage = StorageManager()
+    candidate_path = stored_path if stored_path.exists() else storage.artifact_path_for(str(job.id), suffix)
+    if not candidate_path.exists():
+        raise HTTPException(status_code=404, detail="Artifact not found")
+
+    media_type = ARTIFACT_MEDIA_TYPES.get(normalized_kind, "application/octet-stream")
+    filename = stored_path.name if stored_path.name else f"{job.id}{suffix}"
+    return FileResponse(candidate_path, media_type=media_type, filename=filename)
 
 
 @app.get("/api/v1/users/{user_id}/audits", response_model=list[AuditLogOut])
