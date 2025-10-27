@@ -1,6 +1,13 @@
-"""OCR integration utilities supporting PaddleOCR and Tesseract."""
+"""OCR integration utilities supporting PaddleOCR and Tesseract.
+
+The PaddleOCR SDK occasionally changes the signature of ``engine.ocr``/
+``engine.predict`` regarding the ``cls`` keyword.  We inspect the callable at
+runtime and only forward ``cls`` when it is supported so that both older and
+newer versions stay compatible without user intervention.
+"""
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -51,6 +58,41 @@ class OCRProcessor:
         self.config = config or OCRConfig()
         self._paddle_engine = None
 
+    @staticmethod
+    def _supports_keyword(func: Any, keyword: str) -> bool:
+        """Return ``True`` when ``func`` accepts ``keyword`` as a kwarg."""
+
+        try:
+            signature = inspect.signature(func)
+        except (TypeError, ValueError):  # pragma: no cover - C extensions etc.
+            return False
+
+        if keyword in signature.parameters:
+            param = signature.parameters[keyword]
+            return param.kind in (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            )
+
+        return any(
+            param.kind == inspect.Parameter.VAR_KEYWORD
+            for param in signature.parameters.values()
+        )
+
+    def _invoke_paddle(self, engine: Any, image: np.ndarray) -> Any:
+        """Call the Paddle engine while handling ``cls`` compatibility."""
+
+        cls_value = self.config.enable_angle_class
+        for method_name in ("ocr", "predict"):
+            method = getattr(engine, method_name, None)
+            if method is None:
+                continue
+            if self._supports_keyword(method, "cls"):
+                return method(image, cls=cls_value)
+            return method(image)
+
+        raise AttributeError("PaddleOCR engine exposes neither 'ocr' nor 'predict'.")
+
     def _load_paddle(self) -> Any:
         if self._paddle_engine is not None:
             return self._paddle_engine
@@ -76,7 +118,7 @@ class OCRProcessor:
 
     def _run_paddle(self, image: np.ndarray) -> OCRResult:
         engine = self._load_paddle()
-        result = engine.ocr(image, cls=self.config.enable_angle_class)
+        result = self._invoke_paddle(engine, image)
 
         text_parts: List[str] = []
         confidences: List[float] = []
