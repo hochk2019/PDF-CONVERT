@@ -40,6 +40,13 @@ Service hiện dùng JWT authentication, cần bổ sung các thư viện sau (n
 pip install "passlib[bcrypt]" python-jose[cryptography] "httpx>=0.25"
 ```
 
+To keep the worker environment consistent, rebuild the Docker image or refresh the
+virtualenv whenever `requirements.txt` changes:
+
+```bash
+pip install -r requirements.txt  # installs OCR + artifact export dependencies (OpenCV, PyMuPDF, PaddleOCR, pandas, ...)
+```
+
 ### Chạy API cục bộ
 
 ```bash

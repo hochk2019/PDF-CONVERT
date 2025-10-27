@@ -12,4 +12,14 @@ passlib[bcrypt]>=1.7
 bcrypt<5.0
 httpx>=0.25
 numpy>=1.26
+opencv-python-headless
+pymupdf
+paddlepaddle
+paddleocr
+python-docx
+pandas
+openpyxl
+pytesseract
+language-tool-python
+pyvi
 
