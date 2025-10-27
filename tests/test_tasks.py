@@ -94,7 +94,7 @@ def fake_append_job_log(session, job, message, level=LogLevel.INFO, extra=None):
     session.log_entries.append({"message": message, "level": level, "extra": extra})
 
 
-def _patch_infra(monkeypatch, job, pipeline):
+def _patch_infra(monkeypatch, job, pipeline=None):
     session = FakeSession(job)
 
     @contextmanager
@@ -107,7 +107,8 @@ def _patch_infra(monkeypatch, job, pipeline):
 
     monkeypatch.setattr(tasks, "session_scope", fake_scope)
     monkeypatch.setattr(tasks, "append_job_log", fake_append_job_log)
-    monkeypatch.setattr(tasks, "OCRPipeline", lambda: pipeline)
+    if pipeline is not None:
+        monkeypatch.setattr(tasks, "OCRPipeline", lambda: pipeline)
     return session
 
 
@@ -215,3 +216,65 @@ def test_process_pdf_handles_llm_failure(monkeypatch):
     assert failure_entry["extra"] == {
         "attempts": [{"provider": "primary", "status": "failed", "error": "timeout"}],
     }
+
+
+def test_process_pdf_imports_pipeline_without_dependency_error(monkeypatch, tmp_path):
+    from src.backend import config as backend_config
+
+    backend_config.get_settings.cache_clear()
+
+    monkeypatch.setenv("PDFCONVERT_STORAGE_PATH", str(tmp_path / "storage"))
+    monkeypatch.setenv("PDFCONVERT_RESULTS_PATH", str(tmp_path / "results"))
+
+    converter_stub_calls: list[str] = []
+    ocr_stub_calls: list[Path] = []
+
+    class DummyConverter:
+        def convert(self, pdf_path):  # pragma: no cover - simple stub
+            converter_stub_calls.append(str(pdf_path))
+            return ["image-bytes"]
+
+    class DummyOCR:
+        def run_on_pdf(self, pdf_path, converter):  # pragma: no cover - simple stub
+            ocr_stub_calls.append(Path(pdf_path))
+            converter.convert(pdf_path)
+            return [SimpleNamespace(text="dummy text", confidence=0.9)]
+
+    converter_stub = DummyConverter()
+    ocr_stub = DummyOCR()
+
+    monkeypatch.setattr(tasks.OCRPipeline, "_build_converter", lambda self: converter_stub)
+    monkeypatch.setattr(tasks.OCRPipeline, "_build_ocr", lambda self: ocr_stub)
+    monkeypatch.setattr(
+        tasks.OCRPipeline,
+        "_build_postprocessor",
+        lambda self, llm_options: (None, [], None, False),
+    )
+    monkeypatch.setattr(
+        tasks.OCRPipeline,
+        "_generate_office_artifacts",
+        lambda self, job_id, pages: {},
+    )
+
+    input_pdf = tmp_path / "input.pdf"
+    input_pdf.write_bytes(b"%PDF-1.4 test")
+
+    job = build_job(input_path=str(input_pdf))
+    session = _patch_infra(monkeypatch, job)
+
+    try:
+        tasks.process_pdf(str(job.id))
+    finally:
+        backend_config.get_settings.cache_clear()
+
+    assert job.status == JobStatus.COMPLETED
+    assert job.error_message is None
+    assert job.result_path
+    assert Path(job.result_path).exists()
+    assert job.result_payload["combined_text"] == "dummy text"
+
+    messages = [entry["message"] for entry in session.log_entries]
+    assert "Missing OCR dependency" not in messages
+
+    assert converter_stub_calls == [str(input_pdf)]
+    assert ocr_stub_calls == [input_pdf]
