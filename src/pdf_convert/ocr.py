@@ -87,8 +87,14 @@ class OCRProcessor:
             method = getattr(engine, method_name, None)
             if method is None:
                 continue
-            if self._supports_keyword(method, "cls"):
-                return method(image, cls=cls_value)
+            if cls_value:
+                try:
+                    return method(image, cls=cls_value)
+                except TypeError as exc:
+                    message = str(exc)
+                    if "cls" not in message and "keyword" not in message:
+                        raise
+                    return method(image)
             return method(image)
 
         raise AttributeError("PaddleOCR engine exposes neither 'ocr' nor 'predict'.")
@@ -129,10 +135,31 @@ class OCRProcessor:
         text_parts: List[str] = []
         confidences: List[float] = []
         boxes: List[List[int]] = []
-        for line in result[0]:
-            boxes.append([int(num) for point in line[0] for num in point])
-            text_parts.append(line[1][0])
-            confidences.append(float(line[1][1]))
+
+        if result:
+            first_entry = result[0]
+            try:
+                from collections.abc import Mapping
+            except ImportError:  # pragma: no cover - Python <3.3 fallback
+                Mapping = dict  # type: ignore[assignment]
+
+            if isinstance(first_entry, Mapping):
+                texts = first_entry.get("rec_texts") or []
+                scores = first_entry.get("rec_scores") or []
+                polys = first_entry.get("rec_polys") or []
+                text_parts.extend(str(item) for item in texts)
+                confidences.extend(float(score) for score in scores)
+                for poly in polys:
+                    flat = []
+                    for point in poly:
+                        flat.extend(int(num) for num in point)
+                    if flat:
+                        boxes.append(flat)
+            else:
+                for line in first_entry:
+                    boxes.append([int(num) for point in line[0] for num in point])
+                    text_parts.append(line[1][0])
+                    confidences.append(float(line[1][1]))
 
         text = "\n".join(text_parts)
         confidence = float(np.mean(confidences)) if confidences else None
